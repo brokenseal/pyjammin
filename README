@@ -1,0 +1,7 @@
+Do you like Javascript? Do you love Python?
+Well, you'll most probably like Pyjammin, a way of writing Javscript code in a pythonic way.
+
+Pyjammin implements a pythonic way of writing classes and built-in functions like iter, map, filter, range etc.
+I think I'll rip-off some of the functions from MochiKit...
+
+Work in progress.
