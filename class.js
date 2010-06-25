@@ -1,12 +1,39 @@
 /*
  * A pythonic way of declaring classes inspired by John Resig's Class
- *
+ * 
+ * Declaring a class:
+ * var MyClass= Class.extend({
+ *     __init__: function(kwargs){
+ *         if(kwargs.liquor) {
+ *             this.myFavoriteLiquor= kwargs.liquor;
+ *         } else {
+ *             this.alcoholic= false;
+ *         }
+ *     }
+ *     ,alcoholic: true
+ * });
+ * 
+ * var me= MyClass({
+ *     liquor: 'Amaretto di Saronno'
+ * });
+ * var myFriend= MyClass({
+ *     liquor: 'Jagermeister'
+ * });
+ * var myWife= MyClass({
+ *     liquor: null
+ * });
+ * 
+ * myWife.alcoholic // false
+ * me.alcoholic // true
+ * myFriend.myFavoriteLiquor // Jagermeister
+ * 
+ * P.S. Of course those are only examples...
  */
 
 (function(__global__){
 	var
-		pyAttrs= {
-			__new__: function(){
+		pyPrototype= {
+			__new__: function(kwargs){
 				var
 					name
 					,callableObject
@@ -17,21 +44,21 @@
 					this.__init__.apply(this, arguments);
 				}
 				
-				if(this.__call__) {
-					// allow the new instance of the class to be callable
-					// it's good to make callable objects
-					callableObject= function(){
-						return _this.__call__.apply(_this, arguments);
-					};
-					
-					for(name in this) {
-						callableObject[name] = this[name];
-					}
-					
-					return callableObject;
-				} else {
+				if(!this.__call__) {
 					return this;
 				}
+				
+				// allow the new instance of the class to be callable
+				// it's good to make callable objects
+				callableObject= function(){
+					return _this.__call__.apply(_this, arguments);
+				};
+				
+				for(name in this) {
+					callableObject[name] = this[name];
+				}
+				
+				return callableObject;
 			}
 			,__init__: function(kwargs){
 				var name;
@@ -42,7 +69,6 @@
 				
 				return this;
 			}
-			//,__class__: function(){ throw new NotImplemented() }
 			,__meta__: function(){ throw new NotImplemented() }
 			
 			,__name__: 'Class'
@@ -58,6 +84,7 @@
 			,__delattr__: function(){ throw new NotImplemented() }
 			
 			,__iter__: function(){ throw new NotImplemented() }
+			
 			,__len__: function(){
 				// The __len__ method returns the length of the object
 				// or the length
@@ -66,6 +93,12 @@
 					,name
 				;
 				
+				// does it have a length attribute?
+				if(this.length !== undefined) {
+					return this.length
+				}
+				
+				// find out what's the length of this object based on own properties
 				for(name in this) {
 					if(this.hasOwnProperty(name)) {
 						nKeys+= 1;
@@ -76,58 +109,116 @@
 			}
 			
 			,__repr__: function(){
-				return this.__str__.apply(this, arguments);
+				return "<" + this.__class__.__name__ + ": " + this.__class__.__name__ + " object>";
 			}
 			,__str__: function(){
-				return "<" + this.__class__.__name__ + ": " + this.__class__.__name__ + " object>";
+				return this.__repr__.apply(this, arguments);
 			}
 			,__unicode__: function(){ throw new NotImplemented() }
 		}
-		,jsAttrs= {
+		,pyStatic= {
+			__repr__: function(){
+				return "<class " + this.__name__ + ">";
+			}
+			,__name__: 'Class'
+			,__str__: function(){
+				return this.__repr__.apply(this, arguments);
+			}
+			,__unicode__: function(){ throw new NotImplemented() }
+		}
+		,jsPrototype= {
 			toString: function(){
-				return this.__str__.apply(this, arguments);
+				return this.__repr__.apply(this, arguments);
 			}
 			//,toLocaleString: function(){}
 			//,toSource: function(){}
 			//,valueOf: function(){}
 		}
+		,jsStatic= {
+			toString: function(){
+				return this.__repr__.apply(this, arguments);
+			}
+		}
 		,NotImplemented= new Error('Not implemented.')
 		,initializing= false
 		,fnTest= /xyz/.test(function(){var xyz;}) ? /\b_super\b/ : /.*/
-		,Class= function(){
-			if(!(this instanceof Class)) {
-				return Class.extend.apply(this, arguments);
-			}
+		,Class= function(kwargs){
+			return;
+			// not sure about this
+			/*if(!(this instanceof Class)) {
+				return Class.extend(kwargs);
+			}*/
 		}
 	;
 	
 	// Create a new Class that inherits from the current class.
 	Class.extend= function(kwargs) {
 		var
-			_super_class
-			,_super
+			_super_class= this
+			,_super= this.prototype
 			,prototype
+			,klass= {}
 			,name
-			,i
 			,__class__
-			,name
-			,staticMethods= {}
 		;
 		
-		for(name in pyAttrs) {
-			if(!kwargs.hasOwnProperty(name)) {
-				kwargs[name]= pyAttrs[name];
+		// build the static properties
+		for(name in pyStatic) {
+			klass[name]= pyStatic[name];
+		}
+		for(name in jsStatic) {
+			klass[name]= jsStatic[name];
+		}
+		for(name in kwargs) {
+			if(kwargs[name] && kwargs[name].staticMethod) {
+				klass[name]= kwargs[name];
+				delete kwargs[name];
 			}
 		}
 		
-		for(name in jsAttrs) {
+		// build the prototype
+		for(name in pyPrototype) {
 			if(!kwargs.hasOwnProperty(name)) {
-				kwargs[name]= jsAttrs[name];
+				kwargs[name]= pyPrototype[name];
+			}
+		}
+		for(name in jsPrototype) {
+			if(!kwargs.hasOwnProperty(name)) {
+				kwargs[name]= jsPrototype[name];
 			}
 		}
 		
-		_super_class= this;
-		_super= this.prototype;
+		// The dummy class constructor
+		// All construction is actually done in the init method
+		__class__= function(kwargs){
+			if(!(this instanceof arguments.callee)) {
+				return new arguments.callee(kwargs);
+			}
+			
+			return this.__new__(kwargs);
+		};
+		
+		// attach the static properties
+		for(name in klass) {
+				// Copy the static methods over onto the class
+				__class__[name] = typeof klass[name] == "function" && typeof __class__[name] == "function" && fnTest.test(klass[name]) ?
+					(function(name, fn){
+						return function() {
+							var
+								tmp= this._super
+								,ret
+							;
+							
+							this._super= _super_class[name];
+							ret= fn.apply(this, arguments);
+							this._super= tmp;
+							
+							return ret;
+						};
+					})(name, klass[name])
+					:
+					klass[name];
+		}
 		
 		// Instantiate a base class (but only create the instance,
 		// don't run the init constructor)
@@ -135,58 +226,29 @@
 		prototype= new this();
 		initializing= false;
 		
-		// Copy the properties over onto the new prototype
 		for(name in kwargs) {
-			if(kwargs[name] && kwargs[name].staticMethod) {
-				staticMethods[name]= kwargs[name];
-			} else {
-				// Check if we're overwriting an existing function
-				prototype[name]= typeof kwargs[name] == "function" && typeof _super[name] == "function" && fnTest.test(kwargs[name]) ?
-					(function(name, fn){
-						return function() {
-							var tmp = this._super,
-								ret;
-							
-							// Add a new ._super() method that is the same method
-							// but on the super-class
-							this._super= _super[name];
-							
-							// The method only need to be bound temporarily, so we
-							// remove it when we're done executing
-							ret= fn.apply(this, arguments);
-							this._super= tmp;
-							
-							return ret;
-						};
-					})(name, kwargs[name])
-					:
-					kwargs[name];
-			}
-		}
-		
-		// The dummy class constructor
-		// All construction is actually done in the init method
-		__class__= kwargs.__new__;
-		
-		for(name in staticMethods) {
-		  __class__[name] = typeof staticMethods[name] == "function" &&
-			typeof __class__[name] == "function" && fnTest.test(staticMethods[name]) ?
+			// Copy the properties over onto the new prototype
+			// Check if we're overwriting an existing function
+			prototype[name]= typeof kwargs[name] == "function" && typeof _super[name] == "function" && fnTest.test(kwargs[name]) ?
 				(function(name, fn){
 					return function() {
-						var
-							tmp= this._super
-							,ret
-						;
+						var tmp = this._super,
+							ret;
 						
-						this._super= _super_class[name];
+						// Add a new ._super() method that is the same method
+						// but on the super-class
+						this._super= _super[name];
+						
+						// The method only need to be bound temporarily, so we
+						// remove it when we're done executing
 						ret= fn.apply(this, arguments);
 						this._super= tmp;
 						
 						return ret;
 					};
-				})(name, staticMethods[name])
+				})(name, kwargs[name])
 				:
-				staticMethods[name];
+				kwargs[name];
 		}
 		
 		// Populate our constructed prototype object
