@@ -2,7 +2,7 @@
  * A pythonic way of declaring classes inspired by John Resig's Class
  * 
  * Declaring a class:
- * var MyClass= Class.create({
+ * var Person= Class.create({
  *     __init__: function(kwargs){
  *         if(kwargs.liquor) {
  *             this.myFavoriteLiquor= kwargs.liquor;
@@ -13,13 +13,13 @@
  *     ,alcoholic: true
  * });
  * 
- * var me= MyClass({
+ * var me= Person({
  *     liquor: 'Amaretto di Saronno'
  * });
- * var myFriend= MyClass({
+ * var myFriend= Person({
  *     liquor: 'Jagermeister'
  * });
- * var myWife= MyClass({
+ * var myWife= Person({
  *     liquor: null
  * });
  * 
@@ -48,19 +48,10 @@
 				
 				return this;
 			}
-			,__meta__: function(){ throw new NotImplemented() }
 			
 			,__name__: 'Class'
 			,__call__: null
 			,__parent__: null
-			
-			//,__get__: function(){ throw new NotImplemented() }
-			//,__set__: function(){ throw new NotImplemented() }
-			//,__del__: function(){ throw new NotImplemented() }
-			
-			//,__getattr__: function(){ throw new NotImplemented() }
-			//,__setattr__: function(){ throw new NotImplemented() }
-			//,__delattr__: function(){ throw new NotImplemented() }
 			
 			,__iter__: function(){ throw new NotImplemented() }
 			
@@ -74,7 +65,7 @@
 				
 				// does it have a length attribute?
 				if(this.length !== undefined) {
-					return this.length
+					return this.length;
 				}
 				
 				// find out what's the length of this object based on own properties
@@ -94,18 +85,6 @@
 				return this.__repr__.apply(this, arguments);
 			}
 			,__unicode__: function(){ throw new NotImplemented() }
-			//
-			//// static class init
-			//,__metaclass__: {
-			//	__repr__: function(){
-			//		return "<class " + this.__name__ + ">";
-			//	}
-			//	,__name__: 'Class'
-			//	,__str__: function(){
-			//		return this.__repr__.apply(this, arguments);
-			//	}
-			//	,__unicode__: function(){ throw new NotImplemented() }
-			//}
 		}
 		,jsPrototype= {
 			toString: function(){
@@ -116,7 +95,7 @@
 			//,valueOf: function(){}
 		}
 		,jsStatic= {
-			__iter__: function(){
+			__iterator__: function(){
 				return this.__iter__.apply(this, arguments);
 			}
 			,toString: function(){
@@ -298,11 +277,6 @@
 			__class__.__name__= parts[parts.length - 1];
 		}
 		
-		// class initialisation
-		//if(__class__.__init__) {
-		//	__class__.__init__(__class__);
-		//}
-		
 		if(_super_class.extended) {
 			_super_class.extended(__class__);
 		}
@@ -310,5 +284,12 @@
 		return __class__;
 	};
 	
-	__global__.C= Class;
+	// add a global meta class to the pythonic attributes
+	pyAttrs.__metaclass__= Class.create({
+		__repr__: function(){
+			return "<class " + this.__name__ + ">";
+		}
+	});
+	
+	__global__.Class= Class;
 })(this);

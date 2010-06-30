@@ -109,6 +109,32 @@
 				return obj[str[0]] || defaultResult;
 			}
 		}
+		,str= function(obj){
+			if(obj === undefined) {
+				
+				return '';
+				
+			} else if(obj.__str__){
+				
+				return obj.__str__();
+				
+			}
+			
+			return obj.toString();
+		}
+		,repr= function(obj){
+			return obj.__repr__ ? obj.__repr__() : '';
+		}
+		,len= function(obj){
+			// does it have a length attribute?
+			if(obj.length !== undefined) {
+				return obj.length;
+			} else if(obj.__len__){
+				return obj.__len__();
+			}
+			
+			return undefined;
+		}
 		,curry= function(fn) {
 			var args = Array.prototype.slice.call(arguments);
 			
