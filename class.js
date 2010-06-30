@@ -306,5 +306,5 @@
 		return __class__;
 	};
 	
-	__global__.C= Class;
+	__global__.Class= Class;
 })(this);
