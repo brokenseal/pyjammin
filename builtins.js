@@ -193,11 +193,14 @@
 			return result;
 		}
 		,render= (function(){
-			// A modified version of			// Simple JavaScript Templating			// John Resig - http://ejohn.org/ - MIT Licensed
+			// A modified version of
+			// Simple JavaScript Templating
+			// John Resig - http://ejohn.org/ - MIT Licensed
 			var cache = {};
 			
 			return function (str, data){
-				// Figure out if we're getting a template, or if we need to				// load the template - and be sure to cache the result.
+				// Figure out if we're getting a template, or if we need to
+				// load the template - and be sure to cache the result.
 				var fn = !/\W/.test(str) ?
 					cache[this] = cache[this] || document.getElementById(this).innerHTML.render()
 					:
@@ -364,7 +367,8 @@
 		
 		// random stuff
 		
-		// a better typeof		,typeOf= function(obj){
+		// a better typeof
+		,typeOf= function(obj){
 			if(obj === null) {
 				return "null";
 			} else if(obj === undefined) {

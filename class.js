@@ -27,41 +27,17 @@
  * me.alcoholic // true
  * myFriend.myFavoriteLiquor // Jagermeister
  * 
- * You may or may not use the keyword "new", it will 
- * instantiate the class anyway
- * 
  * P.S. Of course those are only examples...
  */
 
 (function(__global__){
 	var
-		pyPrototype= {
-			__new__: function(){
-				var
-					name
-					,callableObject
-					,_this= this
-				;
+		pyAttrs= {
+			__new__: function(classObj){
+				// the instantiator method responsible to give back an instance
+				// of the class 'classObj'
 				
-				if ( !klassInitializing && this.__init__ ) {
-					this.__init__.apply(this, arguments);
-				}
-				
-				if(!this.__call__) {
-					return this;
-				}
-				
-				// allow the new instance of the class to be callable
-				// it's good to make callable objects
-				callableObject= function(){
-					return _this.__call__.apply(_this, arguments);
-				};
-				
-				for(name in this) {
-					callableObject[name] = this[name];
-				}
-				
-				return callableObject;
+				return new classObj();
 			}
 			,__init__: function(kwargs){
 				var name;
@@ -78,13 +54,13 @@
 			,__call__: null
 			,__parent__: null
 			
-			,__get__: function(){ throw new NotImplemented() }
-			,__set__: function(){ throw new NotImplemented() }
-			,__del__: function(){ throw new NotImplemented() }
+			//,__get__: function(){ throw new NotImplemented() }
+			//,__set__: function(){ throw new NotImplemented() }
+			//,__del__: function(){ throw new NotImplemented() }
 			
-			,__getattr__: function(){ throw new NotImplemented() }
-			,__setattr__: function(){ throw new NotImplemented() }
-			,__delattr__: function(){ throw new NotImplemented() }
+			//,__getattr__: function(){ throw new NotImplemented() }
+			//,__setattr__: function(){ throw new NotImplemented() }
+			//,__delattr__: function(){ throw new NotImplemented() }
 			
 			,__iter__: function(){ throw new NotImplemented() }
 			
@@ -118,16 +94,18 @@
 				return this.__repr__.apply(this, arguments);
 			}
 			,__unicode__: function(){ throw new NotImplemented() }
-		}
-		,pyStatic= {
-			__repr__: function(){
-				return "<class " + this.__name__ + ">";
-			}
-			,__name__: 'Class'
-			,__str__: function(){
-				return this.__repr__.apply(this, arguments);
-			}
-			,__unicode__: function(){ throw new NotImplemented() }
+			//
+			//// static class init
+			//,__metaclass__: {
+			//	__repr__: function(){
+			//		return "<class " + this.__name__ + ">";
+			//	}
+			//	,__name__: 'Class'
+			//	,__str__: function(){
+			//		return this.__repr__.apply(this, arguments);
+			//	}
+			//	,__unicode__: function(){ throw new NotImplemented() }
+			//}
 		}
 		,jsPrototype= {
 			toString: function(){
@@ -138,7 +116,10 @@
 			//,valueOf: function(){}
 		}
 		,jsStatic= {
-			toString: function(){
+			__iter__: function(){
+				return this.__iter__.apply(this, arguments);
+			}
+			,toString: function(){
 				return this.__repr__.apply(this, arguments);
 			}
 		}
@@ -147,10 +128,6 @@
 		,fnTest= /xyz/.test(function(){var xyz;}) ? /\b_super\b/ : /.*/
 		,Class= function(kwargs){
 			return;
-			// not sure about this
-			/*if(!(this instanceof Class)) {
-				return Class.create(kwargs);
-			}*/
 		}
 	;
 	
@@ -160,30 +137,33 @@
 			_super_class= this
 			,_super= this.prototype
 			,prototype
-			,klass= {}
+			,metaClass= {}
 			,name
 			,__class__
 			,instanceInitializing= false
+			,metaClass
 		;
 		
-		// build the static properties
-		for(name in pyStatic) {
-			klass[name]= pyStatic[name];
+		// metaclass init
+		if(kwargs.__metaclass__) {
+			metaClass= kwargs.__metaclass__();
+			
+			delete kwargs.__metaclass__;
 		}
 		for(name in jsStatic) {
-			klass[name]= jsStatic[name];
+			metaClass[name]= jsStatic[name];
 		}
 		for(name in kwargs) {
 			if(kwargs[name] && kwargs[name].staticMethod) {
-				klass[name]= kwargs[name];
+				metaClass[name]= kwargs[name];
 				delete kwargs[name];
 			}
 		}
 		
 		// build the prototype
-		for(name in pyPrototype) {
+		for(name in pyAttrs) {
 			if(!kwargs.hasOwnProperty(name)) {
-				kwargs[name]= pyPrototype[name];
+				kwargs[name]= pyAttrs[name];
 			}
 		}
 		for(name in jsPrototype) {
@@ -193,29 +173,53 @@
 		}
 		
 		// The dummy class constructor
-		// All construction is actually done in the __new__ and __init__ methods
+		// All construction is actually done in the __new__ method
 		__class__= function(){
 			var
-				_this
+				newMethod
+				,newInstance
+				,args= Array.prototype.slice.call(arguments)
 			;
+			args.unshift(__class__);
 			
 			if(!(this instanceof __class__)) {
-				instanceInitializing= true;
-				_this= new __class__();
-				instanceInitializing= false;
-				
-				return _this.__new__.apply(_this, arguments);
+				newMethod= __class__.prototype.__new__;
+			} else if(!instanceInitializing) {
+				newMethod= this.__new__;
 			}
 			
-			if(!instanceInitializing) {
-				return this.__new__.apply(this, arguments);
+			if( !(this instanceof __class__) || !instanceInitializing ) {
+				instanceInitializing= true;
+				newInstance= newMethod.apply(__class__, args);
+				instanceInitializing= false;
+				
+				if ( !klassInitializing && newInstance.__init__ && newInstance instanceof __class__ ) {
+					newInstance.__init__.apply(newInstance, arguments);
+				}
+				
+				if(!newInstance.__call__) {
+					return newInstance;
+				}
+				
+				// allow the new instance of the class to be callable
+				// it's good to make callable objects, but the returned
+				// object not being an instance of __class__
+				callableObject= function(){
+					return newInstance.__call__.apply(newInstance, arguments);
+				};
+				
+				for(name in this) {
+					callableObject[name] = this[name];
+				}
+				
+				return callableObject;
 			}
 		};
 		
 		// attach the static properties
-		for(name in klass) {
+		for(name in metaClass) {
 				// Copy the static methods over onto the class
-				__class__[name] = typeof klass[name] == "function" && typeof __class__[name] == "function" && fnTest.test(klass[name]) ?
+				__class__[name] = typeof metaClass[name] == "function" && typeof __class__[name] == "function" && fnTest.test(metaClass[name]) ?
 					(function(name, fn){
 						return function() {
 							var
@@ -229,9 +233,9 @@
 							
 							return ret;
 						};
-					})(name, klass[name])
+					})(name, metaClass[name])
 					:
-					klass[name];
+					metaClass[name];
 		}
 		
 		// Instantiate a base class (but only create the instance,
@@ -295,9 +299,9 @@
 		}
 		
 		// class initialisation
-		if(__class__.__init__) {
-			__class__.__init__(__class__);
-		}
+		//if(__class__.__init__) {
+		//	__class__.__init__(__class__);
+		//}
 		
 		if(_super_class.extended) {
 			_super_class.extended(__class__);
@@ -306,5 +310,5 @@
 		return __class__;
 	};
 	
-	__global__.Class= Class;
+	__global__.C= Class;
 })(this);
