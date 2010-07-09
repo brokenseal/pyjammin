@@ -171,16 +171,16 @@
 		// js stuff
 		
 		// string helpers
-		,startsWith: function(str, stringToMatch){
+		,startsWith= function(str, stringToMatch){
 			return str.concat().match("^" + stringToMatch) === null ? false : true ;
 		}
-		,endsWith: function(str, stringToMatch){
+		,endsWith= function(str, stringToMatch){
 			return str.concat().match(stringToMatch + "$") === null ? false : true ;
 		}
-		,lower: function(str) {
+		,lower= function(str) {
 			return str.toLowerCase();
 		}
-		,upper: function(str) {
+		,upper= function(str) {
 			return str.toUpperCase();
 		}
 		,trim= function(str) {
@@ -194,7 +194,7 @@
 			
 			return newStr.slice(0, i + 1);
 		}
-		,asInt: function(str) {
+		,asInt= function(str) {
 			return parseInt(str, 10);
 		}
 		,capitalize= function(str){
