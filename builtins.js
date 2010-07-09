@@ -9,9 +9,9 @@
 		getCallable= function(pathToProperty){
 			// depends on require
 			var
-				tmpPath= pathToProperty.split('.'),
-				path= tmpPath.slice(0, tmpPath.length-1).join('/'),
-				property= tmpPath.slice(-1)[0]
+				tmpPath= pathToProperty.split('.')
+				,path= tmpPath.slice(0, tmpPath.length-1).join('/')
+				,property= tmpPath.slice(-1)[0]
 			;
 			
 			return require(path)[property];
@@ -37,9 +37,11 @@
 			return false;
 		}
 		,filter= function(arr, callback){
-			var result= [],
-				arrLen= arr.length,
-				i;
+			var
+				result= []
+				,arrLen= arr.length
+				,i
+			;
 			
 			for(i= 0; i< arrLen; i++) {
 				if(callback.apply(arr[i])) {
@@ -50,21 +52,26 @@
 			return result;
 		}
 		,map= function(arr, callback){
-			var result= [],
-				arrLen= arr.length,
-				i;
+			var
+				result= []
+				,arrLen= arr.length
+				,i
+			;
 			
 			for (i= 0; i < arrLen; i++) {
 				result.push(callback.apply(arr[i]));
 			}
+			
 			return result;
 		}
 		,bool= function(expr){
 			return new Boolean(expr);
 		}
 		,center= function(value, spaces){
-			var spacesBefore,
-				spacesAfter;
+			var
+				spacesBefore
+				,spacesAfter
+			;
 			spaces= spaces - value.length;
 			
 			if(!spaces) {
@@ -81,7 +88,7 @@
 				value.push(' ');
 			}
 			
-			return value.join();
+			return value.join('');
 		}
 		,getattr= function(str, obj, defaultResult){
 			var
@@ -146,8 +153,10 @@
 			var args = Array.prototype.slice.call(arguments);
 			
 			return function(){
-				var arg = 0,
-					i;
+				var
+					arg = 0
+					,i
+				;
 				
 				for (i = 0; i < args.length && arg < arguments.length; i++ ) {
 					if ( args[i] === undefined ) {
@@ -156,7 +165,7 @@
 				}
 				
 				return fn.apply(this, args);
-			};
+			}
 		}
 		
 		// js stuff
@@ -204,7 +213,7 @@
 		,rescape= function(str){
 			return str.replace(/(\(|\)|\{|\})/g,'\\$1');
 		}
-		,bsplit=: function(str, path){
+		,bsplit= function(str, path){
 			var
 				cursor= 0,
 				result= []
@@ -298,7 +307,7 @@
 				arr.length = from < 0 ? arr.length + from : from;
 				return arr.push.apply(arr, rest);
 			}
-		},
+		}
 		,has= function(arr, obj) {
 			return indexOf(arr, obj) >= 0;
 		}
